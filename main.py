@@ -9,7 +9,7 @@ import math
 
 import numpy as np
 
-MINOVERLAP = 0.5 # default value (defined in the PASCAL VOC2012 challenge)
+MINOVERLAP = 0.5  # default value (defined in the PASCAL VOC2012 challenge)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-na', '--no-animation', help="no animation is shown.", action="store_true")
@@ -48,7 +48,7 @@ GT_PATH = os.path.join(os.getcwd(), 'input', 'ground-truth')
 DR_PATH = os.path.join(os.getcwd(), 'input', 'detection-results')
 # if there are no images then no animation can be shown
 IMG_PATH = os.path.join(os.getcwd(), 'input', 'images-optional')
-if os.path.exists(IMG_PATH): 
+if os.path.exists(IMG_PATH):
     for dirpath, dirnames, files in os.walk(IMG_PATH):
         if not files:
             # no image files found
@@ -61,6 +61,7 @@ show_animation = False
 if not args.no_animation:
     try:
         import cv2
+
         show_animation = True
     except ImportError:
         print("\"opencv-python\" not found, please install to visualize the results.")
@@ -71,6 +72,7 @@ draw_plot = False
 if not args.no_plot:
     try:
         import matplotlib.pyplot as plt
+
         draw_plot = True
     except ImportError:
         print("\"matplotlib\" not found, please install it to get the resulting plots.")
@@ -108,7 +110,7 @@ def log_average_miss_rate(prec, rec, num_images):
     mr_tmp = np.insert(mr, 0, 1.0)
 
     # Use 9 evenly spaced reference points in log-space
-    ref = np.logspace(-2.0, 0.0, num = 9)
+    ref = np.logspace(-2.0, 0.0, num=9)
     for i, ref_i in enumerate(ref):
         # np.where() will always find at least 1 index, since min(ref) = 0.01 and min(fppi_tmp) = -1.0
         j = np.where(fppi_tmp <= ref_i)[-1][-1]
@@ -119,16 +121,22 @@ def log_average_miss_rate(prec, rec, num_images):
 
     return lamr, mr, fppi
 
+
 """
  throw error and exit
 """
+
+
 def error(msg):
     print(msg)
     sys.exit(0)
 
+
 """
  check if the number is a float between 0.0 and 1.0
 """
+
+
 def is_float_between_0_and_1(value):
     try:
         val = float(value)
@@ -139,12 +147,15 @@ def is_float_between_0_and_1(value):
     except ValueError:
         return False
 
+
 """
  Calculate the AP given the recall and precision array
     1st) We compute a version of the measured precision/recall curve with
          precision monotonically decreasing
     2nd) We compute the AP as the area under this curve by numerical integration.
 """
+
+
 def voc_ap(rec, prec):
     """
     --- Official matlab code VOC2012---
@@ -156,11 +167,11 @@ def voc_ap(rec, prec):
     i=find(mrec(2:end)~=mrec(1:end-1))+1;
     ap=sum((mrec(i)-mrec(i-1)).*mpre(i));
     """
-    rec.insert(0, 0.0) # insert 0.0 at begining of list
-    rec.append(1.0) # insert 1.0 at end of list
+    rec.insert(0, 0.0)  # insert 0.0 at begining of list
+    rec.append(1.0)  # insert 1.0 at end of list
     mrec = rec[:]
-    prec.insert(0, 0.0) # insert 0.0 at begining of list
-    prec.append(0.0) # insert 0.0 at end of list
+    prec.insert(0, 0.0)  # insert 0.0 at begining of list
+    prec.append(0.0)  # insert 0.0 at end of list
     mpre = prec[:]
     """
      This part makes the precision monotonically decreasing
@@ -172,16 +183,16 @@ def voc_ap(rec, prec):
     #     range(start=(len(mpre) - 2), end=0, step=-1)
     # also the python function range excludes the end, resulting in:
     #     range(start=(len(mpre) - 2), end=-1, step=-1)
-    for i in range(len(mpre)-2, -1, -1):
-        mpre[i] = max(mpre[i], mpre[i+1])
+    for i in range(len(mpre) - 2, -1, -1):
+        mpre[i] = max(mpre[i], mpre[i + 1])
     """
      This part creates a list of indexes where the recall changes
         matlab: i=find(mrec(2:end)~=mrec(1:end-1))+1;
     """
     i_list = []
     for i in range(1, len(mrec)):
-        if mrec[i] != mrec[i-1]:
-            i_list.append(i) # if it was matlab would be i + 1
+        if mrec[i] != mrec[i - 1]:
+            i_list.append(i)  # if it was matlab would be i + 1
     """
      The Average Precision (AP) is the area under the curve
         (numerical integration)
@@ -189,13 +200,15 @@ def voc_ap(rec, prec):
     """
     ap = 0.0
     for i in i_list:
-        ap += ((mrec[i]-mrec[i-1])*mpre[i])
+        ap += ((mrec[i] - mrec[i - 1]) * mpre[i])
     return ap, mrec, mpre
 
 
 """
  Convert the lines of a file to a list
 """
+
+
 def file_lines_to_list(path):
     # open txt file lines to a list
     with open(path) as f:
@@ -204,26 +217,32 @@ def file_lines_to_list(path):
     content = [x.strip() for x in content]
     return content
 
+
 """
  Draws text in image
 """
+
+
 def draw_text_in_image(img, text, pos, color, line_width):
     font = cv2.FONT_HERSHEY_PLAIN
     fontScale = 1
     lineType = 1
     bottomLeftCornerOfText = pos
     cv2.putText(img, text,
-            bottomLeftCornerOfText,
-            font,
-            fontScale,
-            color,
-            lineType)
+                bottomLeftCornerOfText,
+                font,
+                fontScale,
+                color,
+                lineType)
     text_width, _ = cv2.getTextSize(text, font, fontScale, lineType)[0]
     return img, (line_width + text_width)
+
 
 """
  Plot - adjust axes
 """
+
+
 def adjust_axes(r, t, fig, axes):
     # get text width for re-scaling
     bb = t.get_window_extent(renderer=r)
@@ -234,12 +253,16 @@ def adjust_axes(r, t, fig, axes):
     propotion = new_fig_width / current_fig_width
     # get axis limit
     x_lim = axes.get_xlim()
-    axes.set_xlim([x_lim[0], x_lim[1]*propotion])
+    axes.set_xlim([x_lim[0], x_lim[1] * propotion])
+
 
 """
  Draw plot using Matplotlib
 """
-def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, output_path, to_show, plot_color, true_p_bar):
+
+
+def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, output_path, to_show, plot_color,
+                   true_p_bar):
     # sort the dictionary by decreasing value, into a list of tuples
     sorted_dic_by_value = sorted(dictionary.items(), key=operator.itemgetter(1))
     # unpacking the list of tuples into two lists
@@ -258,13 +281,14 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
             fp_sorted.append(dictionary[key] - true_p_bar[key])
             tp_sorted.append(true_p_bar[key])
         plt.barh(range(n_classes), fp_sorted, align='center', color='crimson', label='False Positive')
-        plt.barh(range(n_classes), tp_sorted, align='center', color='forestgreen', label='True Positive', left=fp_sorted)
+        plt.barh(range(n_classes), tp_sorted, align='center', color='forestgreen', label='True Positive',
+                 left=fp_sorted)
         # add legend
         plt.legend(loc='lower right')
         """
          Write number on side of bar
         """
-        fig = plt.gcf() # gcf - get current figure
+        fig = plt.gcf()  # gcf - get current figure
         axes = plt.gca()
         r = fig.canvas.get_renderer()
         for i, val in enumerate(sorted_values):
@@ -276,23 +300,23 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
             # first paint everything and then repaint the first number
             t = plt.text(val, i, tp_str_val, color='forestgreen', va='center', fontweight='bold')
             plt.text(val, i, fp_str_val, color='crimson', va='center', fontweight='bold')
-            if i == (len(sorted_values)-1): # largest bar
+            if i == (len(sorted_values) - 1):  # largest bar
                 adjust_axes(r, t, fig, axes)
     else:
         plt.barh(range(n_classes), sorted_values, color=plot_color)
         """
          Write number on side of bar
         """
-        fig = plt.gcf() # gcf - get current figure
+        fig = plt.gcf()  # gcf - get current figure
         axes = plt.gca()
         r = fig.canvas.get_renderer()
         for i, val in enumerate(sorted_values):
-            str_val = " " + str(val) # add a space before
+            str_val = " " + str(val)  # add a space before
             if val < 1.0:
                 str_val = " {0:.2f}".format(val)
             t = plt.text(val, i, str_val, color=plot_color, va='center', fontweight='bold')
             # re-set axes to show number inside the figure
-            if i == (len(sorted_values)-1): # largest bar
+            if i == (len(sorted_values) - 1):  # largest bar
                 adjust_axes(r, t, fig, axes)
     # set window title
     fig.canvas.set_window_title(window_title)
@@ -305,11 +329,11 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
     init_height = fig.get_figheight()
     # comput the matrix height in points and inches
     dpi = fig.dpi
-    height_pt = n_classes * (tick_font_size * 1.4) # 1.4 (some spacing)
+    height_pt = n_classes * (tick_font_size * 1.4)  # 1.4 (some spacing)
     height_in = height_pt / dpi
     # compute the required figure height 
-    top_margin = 0.15 # in percentage of the figure height
-    bottom_margin = 0.05 # in percentage of the figure height
+    top_margin = 0.15  # in percentage of the figure height
+    bottom_margin = 0.05  # in percentage of the figure height
     figure_height = height_in / (1 - top_margin - bottom_margin)
     # set new height
     if figure_height > init_height:
@@ -330,14 +354,15 @@ def draw_plot_func(dictionary, n_classes, window_title, plot_title, x_label, out
     # close the plot
     plt.close()
 
+
 """
  Create a ".temp_files/" and "output/" directory
 """
 TEMP_FILES_PATH = ".temp_files"
-if not os.path.exists(TEMP_FILES_PATH): # if it doesn't exist already
+if not os.path.exists(TEMP_FILES_PATH):  # if it doesn't exist already
     os.makedirs(TEMP_FILES_PATH)
 output_files_path = "output"
-if os.path.exists(output_files_path): # if it exist already
+if os.path.exists(output_files_path):  # if it exist already
     # reset the output directory
     shutil.rmtree(output_files_path)
 
@@ -363,7 +388,7 @@ counter_images_per_class = {}
 
 gt_files = []
 for txt_file in ground_truth_files_list:
-    #print(txt_file)
+    # print(txt_file)
     file_id = txt_file.split(".txt", 1)[0]
     file_id = os.path.basename(os.path.normpath(file_id))
     # check if there is a correspondent detection-results file
@@ -380,10 +405,10 @@ for txt_file in ground_truth_files_list:
     for line in lines_list:
         try:
             if "difficult" in line:
-                    class_name, left, top, right, bottom, _difficult = line.split()
-                    is_difficult = True
+                class_name, left, top, right, bottom, _difficult = line.split()
+                is_difficult = True
             else:
-                    class_name, left, top, right, bottom = line.split()
+                class_name, left, top, right, bottom = line.split()
         except ValueError:
             error_msg = "Error: File " + txt_file + " in the wrong format.\n"
             error_msg += " Expected: <class_name> <left> <top> <right> <bottom> ['difficult']\n"
@@ -394,12 +419,12 @@ for txt_file in ground_truth_files_list:
         # check if class is in the ignore list, if yes skip
         if class_name in args.ignore:
             continue
-        bbox = left + " " + top + " " + right + " " +bottom
+        bbox = left + " " + top + " " + right + " " + bottom
         if is_difficult:
-            bounding_boxes.append({"class_name":class_name, "bbox":bbox, "used":False, "difficult":True})
+            bounding_boxes.append({"class_name": class_name, "bbox": bbox, "used": False, "difficult": True})
             is_difficult = False
         else:
-            bounding_boxes.append({"class_name":class_name, "bbox":bbox, "used":False})
+            bounding_boxes.append({"class_name": class_name, "bbox": bbox, "used": False})
             # count that object
             if class_name in gt_counter_per_class:
                 gt_counter_per_class[class_name] += 1
@@ -415,7 +440,6 @@ for txt_file in ground_truth_files_list:
                     counter_images_per_class[class_name] = 1
                 already_seen_classes.append(class_name)
 
-
     # dump bounding_boxes into a ".json" file
     new_temp_file = TEMP_FILES_PATH + "/" + file_id + "_ground_truth.json"
     gt_files.append(new_temp_file)
@@ -426,8 +450,8 @@ gt_classes = list(gt_counter_per_class.keys())
 # let's sort the classes alphabetically
 gt_classes = sorted(gt_classes)
 n_classes = len(gt_classes)
-#print(gt_classes)
-#print(gt_counter_per_class)
+# print(gt_classes)
+# print(gt_counter_per_class)
 
 """
  Check format of the flag --set-class-iou (if used)
@@ -441,14 +465,14 @@ if specific_iou_flagged:
         error('Error, missing arguments. Flag usage:' + error_msg)
     # [class_1] [IoU_1] [class_2] [IoU_2]
     # specific_iou_classes = ['class_1', 'class_2']
-    specific_iou_classes = args.set_class_iou[::2] # even
+    specific_iou_classes = args.set_class_iou[::2]  # even
     # iou_list = ['IoU_1', 'IoU_2']
-    iou_list = args.set_class_iou[1::2] # odd
+    iou_list = args.set_class_iou[1::2]  # odd
     if len(specific_iou_classes) != len(iou_list):
         error('Error, missing arguments. Flag usage:' + error_msg)
     for tmp_class in specific_iou_classes:
         if tmp_class not in gt_classes:
-                    error('Error, unknown class \"' + tmp_class + '\". Flag usage:' + error_msg)
+            error('Error, unknown class \"' + tmp_class + '\". Flag usage:' + error_msg)
     for num in iou_list:
         if not is_float_between_0_and_1(num):
             error('Error, IoU must be between 0.0 and 1.0. Flag usage:' + error_msg)
@@ -464,9 +488,9 @@ dr_files_list.sort()
 for class_index, class_name in enumerate(gt_classes):
     bounding_boxes = []
     for txt_file in dr_files_list:
-        #print(txt_file)
+        # print(txt_file)
         # the first time it checks if all the corresponding ground-truth files exist
-        file_id = txt_file.split(".txt",1)[0]
+        file_id = txt_file.split(".txt", 1)[0]
         file_id = os.path.basename(os.path.normpath(file_id))
         temp_path = os.path.join(GT_PATH, (file_id + ".txt"))
         if class_index == 0:
@@ -484,12 +508,12 @@ for class_index, class_name in enumerate(gt_classes):
                 error_msg += " Received: " + line
                 error(error_msg)
             if tmp_class_name == class_name:
-                #print("match")
-                bbox = left + " " + top + " " + right + " " +bottom
-                bounding_boxes.append({"confidence":confidence, "file_id":file_id, "bbox":bbox})
-                #print(bounding_boxes)
+                # print("match")
+                bbox = left + " " + top + " " + right + " " + bottom
+                bounding_boxes.append({"confidence": confidence, "file_id": file_id, "bbox": bbox})
+                # print(bounding_boxes)
     # sort detection-results by decreasing confidence
-    bounding_boxes.sort(key=lambda x:float(x['confidence']), reverse=True)
+    bounding_boxes.sort(key=lambda x: float(x['confidence']), reverse=True)
     with open(TEMP_FILES_PATH + "/" + class_name + "_dr.json", 'w') as outfile:
         json.dump(bounding_boxes, outfile)
 
@@ -515,20 +539,20 @@ with open(output_files_path + "/output.txt", 'w') as output_file:
          Assign detection-results to ground-truth objects
         """
         nd = len(dr_data)
-        tp = [0] * nd # creates an array of zeros of size nd
+        tp = [0] * nd  # creates an array of zeros of size nd
         fp = [0] * nd
         for idx, detection in enumerate(dr_data):
             file_id = detection["file_id"]
             if show_animation:
                 # find ground truth image
                 ground_truth_img = glob.glob1(IMG_PATH, file_id + ".*")
-                #tifCounter = len(glob.glob1(myPath,"*.tif"))
+                # tifCounter = len(glob.glob1(myPath,"*.tif"))
                 if len(ground_truth_img) == 0:
                     error("Error. Image not found with id: " + file_id)
                 elif len(ground_truth_img) > 1:
                     error("Error. Multiple image with id: " + file_id)
-                else: # found image
-                    #print(IMG_PATH + "/" + ground_truth_img[0])
+                else:  # found image
+                    # print(IMG_PATH + "/" + ground_truth_img[0])
                     # Load image
                     img = cv2.imread(IMG_PATH + "/" + ground_truth_img[0])
                     # load image with draws of multiple detections
@@ -548,18 +572,18 @@ with open(output_files_path + "/output.txt", 'w') as output_file:
             ovmax = -1
             gt_match = -1
             # load detected object bounding-box
-            bb = [ float(x) for x in detection["bbox"].split() ]
+            bb = [float(x) for x in detection["bbox"].split()]
             for obj in ground_truth_data:
                 # look for a class_name match
                 if obj["class_name"] == class_name:
-                    bbgt = [ float(x) for x in obj["bbox"].split() ]
-                    bi = [max(bb[0],bbgt[0]), max(bb[1],bbgt[1]), min(bb[2],bbgt[2]), min(bb[3],bbgt[3])]
+                    bbgt = [float(x) for x in obj["bbox"].split()]
+                    bi = [max(bb[0], bbgt[0]), max(bb[1], bbgt[1]), min(bb[2], bbgt[2]), min(bb[3], bbgt[3])]
                     iw = bi[2] - bi[0] + 1
                     ih = bi[3] - bi[1] + 1
                     if iw > 0 and ih > 0:
                         # compute overlap (IoU) = area of intersection / area of union
                         ua = (bb[2] - bb[0] + 1) * (bb[3] - bb[1] + 1) + (bbgt[2] - bbgt[0]
-                                        + 1) * (bbgt[3] - bbgt[1] + 1) - iw * ih
+                                                                          + 1) * (bbgt[3] - bbgt[1] + 1) - iw * ih
                         ov = iw * ih / ua
                         if ov > ovmax:
                             ovmax = ov
@@ -567,7 +591,7 @@ with open(output_files_path + "/output.txt", 'w') as output_file:
 
             # assign detection as true positive/don't care/false positive
             if show_animation:
-                status = "NO MATCH FOUND!" # status is only used in the animation
+                status = "NO MATCH FOUND!"  # status is only used in the animation
             # set minimum overlap
             min_overlap = MINOVERLAP
             if specific_iou_flagged:
@@ -576,21 +600,21 @@ with open(output_files_path + "/output.txt", 'w') as output_file:
                     min_overlap = float(iou_list[index])
             if ovmax >= min_overlap:
                 if "difficult" not in gt_match:
-                        if not bool(gt_match["used"]):
-                            # true positive
-                            tp[idx] = 1
-                            gt_match["used"] = True
-                            count_true_positives[class_name] += 1
-                            # update the ".json" file
-                            with open(gt_file, 'w') as f:
-                                    f.write(json.dumps(ground_truth_data))
-                            if show_animation:
-                                status = "MATCH!"
-                        else:
-                            # false positive (multiple detection)
-                            fp[idx] = 1
-                            if show_animation:
-                                status = "REPEATED MATCH!"
+                    if not bool(gt_match["used"]):
+                        # true positive
+                        tp[idx] = 1
+                        gt_match["used"] = True
+                        count_true_positives[class_name] += 1
+                        # update the ".json" file
+                        with open(gt_file, 'w') as f:
+                            f.write(json.dumps(ground_truth_data))
+                        if show_animation:
+                            status = "MATCH!"
+                    else:
+                        # false positive (multiple detection)
+                        fp[idx] = 1
+                        if show_animation:
+                            status = "REPEATED MATCH!"
             else:
                 # false positive
                 fp[idx] = 1
@@ -603,10 +627,10 @@ with open(output_files_path + "/output.txt", 'w') as output_file:
             if show_animation:
                 height, widht = img.shape[:2]
                 # colors (OpenCV works with BGR)
-                white = (255,255,255)
-                light_blue = (255,200,100)
-                green = (0,255,0)
-                light_red = (30,30,255)
+                white = (255, 255, 255)
+                light_blue = (255, 200, 100)
+                green = (0, 255, 0)
+                light_red = (30, 30, 255)
                 # 1st line
                 margin = 10
                 v_pos = int(height - margin - (bottom_border / 2.0))
@@ -617,15 +641,16 @@ with open(output_files_path + "/output.txt", 'w') as output_file:
                 if ovmax != -1:
                     color = light_red
                     if status == "INSUFFICIENT OVERLAP":
-                        text = "IoU: {0:.2f}% ".format(ovmax*100) + "< {0:.2f}% ".format(min_overlap*100)
+                        text = "IoU: {0:.2f}% ".format(ovmax * 100) + "< {0:.2f}% ".format(min_overlap * 100)
                     else:
-                        text = "IoU: {0:.2f}% ".format(ovmax*100) + ">= {0:.2f}% ".format(min_overlap*100)
+                        text = "IoU: {0:.2f}% ".format(ovmax * 100) + ">= {0:.2f}% ".format(min_overlap * 100)
                         color = green
                     img, _ = draw_text_in_image(img, text, (margin + line_width, v_pos), color, line_width)
                 # 2nd line
                 v_pos += int(bottom_border / 2.0)
-                rank_pos = str(idx+1) # rank position (idx starts at 0)
-                text = "Detection #rank: " + rank_pos + " confidence: {0:.2f}% ".format(float(detection["confidence"])*100)
+                rank_pos = str(idx + 1)  # rank position (idx starts at 0)
+                text = "Detection #rank: " + rank_pos + " confidence: {0:.2f}% ".format(
+                    float(detection["confidence"]) * 100)
                 img, line_width = draw_text_in_image(img, text, (margin, v_pos), white, 0)
                 color = light_red
                 if status == "MATCH!":
@@ -634,25 +659,27 @@ with open(output_files_path + "/output.txt", 'w') as output_file:
                 img, line_width = draw_text_in_image(img, text, (margin + line_width, v_pos), color, line_width)
 
                 font = cv2.FONT_HERSHEY_SIMPLEX
-                if ovmax > 0: # if there is intersections between the bounding-boxes
-                    bbgt = [ int(round(float(x))) for x in gt_match["bbox"].split() ]
-                    cv2.rectangle(img,(bbgt[0],bbgt[1]),(bbgt[2],bbgt[3]),light_blue,2)
-                    cv2.rectangle(img_cumulative,(bbgt[0],bbgt[1]),(bbgt[2],bbgt[3]),light_blue,2)
-                    cv2.putText(img_cumulative, class_name, (bbgt[0],bbgt[1] - 5), font, 0.6, light_blue, 1, cv2.LINE_AA)
+                if ovmax > 0:  # if there is intersections between the bounding-boxes
+                    bbgt = [int(round(float(x))) for x in gt_match["bbox"].split()]
+                    cv2.rectangle(img, (bbgt[0], bbgt[1]), (bbgt[2], bbgt[3]), light_blue, 2)
+                    cv2.rectangle(img_cumulative, (bbgt[0], bbgt[1]), (bbgt[2], bbgt[3]), light_blue, 2)
+                    cv2.putText(img_cumulative, class_name, (bbgt[0], bbgt[1] - 5), font, 0.6, light_blue, 1,
+                                cv2.LINE_AA)
                 bb = [int(i) for i in bb]
-                cv2.rectangle(img,(bb[0],bb[1]),(bb[2],bb[3]),color,2)
-                cv2.rectangle(img_cumulative,(bb[0],bb[1]),(bb[2],bb[3]),color,2)
-                cv2.putText(img_cumulative, class_name, (bb[0],bb[1] - 5), font, 0.6, color, 1, cv2.LINE_AA)
+                cv2.rectangle(img, (bb[0], bb[1]), (bb[2], bb[3]), color, 2)
+                cv2.rectangle(img_cumulative, (bb[0], bb[1]), (bb[2], bb[3]), color, 2)
+                cv2.putText(img_cumulative, class_name, (bb[0], bb[1] - 5), font, 0.6, color, 1, cv2.LINE_AA)
                 # show image
                 cv2.imshow("Animation", img)
-                cv2.waitKey(20) # show for 20 ms
+                cv2.waitKey(20)  # show for 20 ms
                 # save image to output
-                output_img_path = output_files_path + "/images/detections_one_by_one/" + class_name + "_detection" + str(idx) + ".jpg"
+                output_img_path = output_files_path + "/images/detections_one_by_one/" + class_name + "_detection" + str(
+                    idx) + ".jpg"
                 cv2.imwrite(output_img_path, img)
                 # save the image with all the objects drawn to it
                 cv2.imwrite(img_cumulative_path, img_cumulative)
 
-        #print(tp)
+        # print(tp)
         # compute precision/recall
         cumsum = 0
         for idx, val in enumerate(fp):
@@ -662,24 +689,24 @@ with open(output_files_path + "/output.txt", 'w') as output_file:
         for idx, val in enumerate(tp):
             tp[idx] += cumsum
             cumsum += val
-        #print(tp)
+        # print(tp)
         rec = tp[:]
         for idx, val in enumerate(tp):
             rec[idx] = float(tp[idx]) / gt_counter_per_class[class_name]
-        #print(rec)
+        # print(rec)
         prec = tp[:]
         for idx, val in enumerate(tp):
             prec[idx] = float(tp[idx]) / (fp[idx] + tp[idx])
-        #print(prec)
+        # print(prec)
 
         ap, mrec, mprec = voc_ap(rec[:], prec[:])
         sum_AP += ap
-        text = "{0:.2f}%".format(ap*100) + " = " + class_name + " AP " #class_name + " AP = {0:.2f}%".format(ap*100)
+        text = "{0:.2f}%".format(ap * 100) + " = " + class_name + " AP "  # class_name + " AP = {0:.2f}%".format(ap*100)
         """
          Write to output.txt
         """
-        rounded_prec = [ '%.2f' % elem for elem in prec ]
-        rounded_rec = [ '%.2f' % elem for elem in rec ]
+        rounded_prec = ['%.2f' % elem for elem in prec]
+        rounded_rec = ['%.2f' % elem for elem in rec]
         output_file.write(text + "\n Precision: " + str(rounded_prec) + "\n Recall :" + str(rounded_rec) + "\n\n")
         if not args.quiet:
             print(text)
@@ -700,32 +727,32 @@ with open(output_files_path + "/output.txt", 'w') as output_file:
             area_under_curve_y = mprec[:-1] + [0.0] + [mprec[-1]]
             plt.fill_between(area_under_curve_x, 0, area_under_curve_y, alpha=0.2, edgecolor='r')
             # set window title
-            fig = plt.gcf() # gcf - get current figure
+            fig = plt.gcf()  # gcf - get current figure
             fig.canvas.set_window_title('AP ' + class_name)
             # set plot title
             plt.title('class: ' + text)
-            #plt.suptitle('This is a somewhat long figure title', fontsize=16)
+            # plt.suptitle('This is a somewhat long figure title', fontsize=16)
             # set axis titles
             plt.xlabel('Recall')
             plt.ylabel('Precision')
             # optional - set axes
-            axes = plt.gca() # gca - get current axes
-            axes.set_xlim([0.0,1.0])
-            axes.set_ylim([0.0,1.05]) # .05 to give some extra space
+            axes = plt.gca()  # gca - get current axes
+            axes.set_xlim([0.0, 1.0])
+            axes.set_ylim([0.0, 1.05])  # .05 to give some extra space
             # Alternative option -> wait for button to be pressed
-            #while not plt.waitforbuttonpress(): pass # wait for key display
+            # while not plt.waitforbuttonpress(): pass # wait for key display
             # Alternative option -> normal display
-            #plt.show()
+            # plt.show()
             # save the plot
             fig.savefig(output_files_path + "/classes/" + class_name + ".png")
-            plt.cla() # clear axes for next plot
+            plt.cla()  # clear axes for next plot
 
     if show_animation:
         cv2.destroyAllWindows()
 
     output_file.write("\n# mAP of all classes\n")
     mAP = sum_AP / n_classes
-    text = "mAP = {0:.2f}%".format(mAP*100)
+    text = "mAP = {0:.2f}%".format(mAP * 100)
     output_file.write(text + "\n")
     print(text)
 
@@ -733,13 +760,13 @@ with open(output_files_path + "/output.txt", 'w') as output_file:
  Draw false negatives
 """
 if show_animation:
-    pink = (203,192,255)
+    pink = (203, 192, 255)
     for tmp_file in gt_files:
         ground_truth_data = json.load(open(tmp_file))
-        #print(ground_truth_data)
+        # print(ground_truth_data)
         # get name of corresponding image
         start = TEMP_FILES_PATH + '/'
-        img_id = tmp_file[tmp_file.find(start)+len(start):tmp_file.rfind('_ground_truth.json')]
+        img_id = tmp_file[tmp_file.find(start) + len(start):tmp_file.rfind('_ground_truth.json')]
         img_cumulative_path = output_files_path + "/images/" + img_id + ".jpg"
         img = cv2.imread(img_cumulative_path)
         if img is None:
@@ -748,8 +775,8 @@ if show_animation:
         # draw false negatives
         for obj in ground_truth_data:
             if not obj['used']:
-                bbgt = [ int(round(float(x))) for x in obj["bbox"].split() ]
-                cv2.rectangle(img,(bbgt[0],bbgt[1]),(bbgt[2],bbgt[3]),pink,2)
+                bbgt = [int(round(float(x))) for x in obj["bbox"].split()]
+                cv2.rectangle(img, (bbgt[0], bbgt[1]), (bbgt[2], bbgt[3]), pink, 2)
         cv2.imwrite(img_cumulative_path, img)
 
 # remove the temp_files directory
@@ -774,9 +801,8 @@ for txt_file in dr_files_list:
         else:
             # if class didn't exist yet
             det_counter_per_class[class_name] = 1
-#print(det_counter_per_class)
+# print(det_counter_per_class)
 dr_classes = list(det_counter_per_class.keys())
-
 
 """
  Plot the total number of occurences of each class in the ground-truth
@@ -799,7 +825,7 @@ if draw_plot:
         to_show,
         plot_color,
         '',
-        )
+    )
 
 """
  Write number of ground-truth objects per class to results.txt
@@ -816,7 +842,7 @@ for class_name in dr_classes:
     # if class exists in detection-result but not in ground-truth then there are no true positives in that class
     if class_name not in gt_classes:
         count_true_positives[class_name] = 0
-#print(count_true_positives)
+# print(count_true_positives)
 
 """
  Plot the total number of occurences of each class in the "detection-results" folder
@@ -844,7 +870,7 @@ if draw_plot:
         to_show,
         plot_color,
         true_p_bar
-        )
+    )
 
 """
  Write number of detected objects per class to output.txt
@@ -878,14 +904,14 @@ if draw_plot:
         to_show,
         plot_color,
         ""
-        )
+    )
 
 """
  Draw mAP plot (Show AP's of all classes in decreasing order)
 """
 if draw_plot:
     window_title = "mAP"
-    plot_title = "mAP = {0:.2f}%".format(mAP*100)
+    plot_title = "mAP = {0:.2f}%".format(mAP * 100)
     x_label = "Average Precision"
     output_path = output_files_path + "/mAP.png"
     to_show = True
@@ -900,4 +926,4 @@ if draw_plot:
         to_show,
         plot_color,
         ""
-        )
+    )
